@@ -24,29 +24,62 @@ app.get("/products", (req, res) => {
   client.connect((err) => {
     const collection = client.db("onlineStore").collection("products");
     // perform actions on the collection object
-    collection
-      .find({ stock: { $gt: 5 } })
-      .limit(10)
-      .toArray((err, documents) => {
-        if (err) {
-          console.log(err);
-          res.status(500).send({ message: err });
-        } else {
-          res.send(documents);
-        }
-      });
+    collection.find().toArray((err, documents) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send({ message: err });
+      } else {
+        res.send(documents);
+      }
+    });
 
     client.close();
   });
 });
 
 // how get dynamic data asked by user
-// app.get("/user/:id", (req, res) => {
-//   const id = req.params.id; // read user request
-//   console.log(req.query.sort);
-//   const name = user[id];
-//   res.send({ id, name });
-// });
+app.get("/product/:key", (req, res) => {
+  const key = req.params.key; // read user request
+
+  client = new MongoClient(uri, { useNewUrlParser: true });
+
+  client.connect((err) => {
+    const collection = client.db("onlineStore").collection("products");
+    // perform actions on the collection object
+    collection.find({ key: key }).toArray((err, documents) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send({ message: err });
+      } else {
+        res.send(documents[0]);
+      }
+    });
+
+    client.close();
+  });
+});
+
+app.post("/getProductsByKey", (req, res) => {
+  const key = req.params.key; // read user request
+  const productKeys = req.body;
+
+  client = new MongoClient(uri, { useNewUrlParser: true });
+
+  client.connect((err) => {
+    const collection = client.db("onlineStore").collection("products");
+    // perform actions on the collection object
+    collection.find({ key: { $in: productKeys } }).toArray((err, documents) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send({ message: err });
+      } else {
+        res.send(documents);
+      }
+    });
+
+    client.close();
+  });
+});
 
 // how to post data
 app.post("/addProduct", (req, res) => {
@@ -57,7 +90,7 @@ app.post("/addProduct", (req, res) => {
   client.connect((err) => {
     const collection = client.db("onlineStore").collection("products");
     // perform actions on the collection object
-    collection.insertOne(product, (err, result) => {
+    collection.insert(product, (err, result) => {
       if (err) {
         console.log(err);
         res.status(500).send({ message: err });
@@ -70,5 +103,28 @@ app.post("/addProduct", (req, res) => {
   });
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log("Listen to port 3000"));
+app.post("/placeOrder", (req, res) => {
+  // save to database
+  const orderDetails = req.body;
+  orderDetails.orderTime = new Date();
+
+  client = new MongoClient(uri, { useNewUrlParser: true });
+
+  client.connect((err) => {
+    const collection = client.db("onlineStore").collection("orders");
+    // perform actions on the collection object
+    collection.insertOne(orderDetails, (err, result) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send({ message: err });
+      } else {
+        res.send(result.ops[0]);
+      }
+    });
+
+    client.close();
+  });
+});
+
+const port = process.env.PORT || 3001;
+app.listen(port, () => console.log("Listen to port 3001"));
