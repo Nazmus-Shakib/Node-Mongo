@@ -17,7 +17,7 @@ let client = new MongoClient(uri, {
 });
 const user = ["Karim", "Rahim", "Jabbar", "Salam", "Rafiq"];
 
-// how get/load data
+// how get/load products data from server
 app.get("/products", (req, res) => {
   client = new MongoClient(uri, { useNewUrlParser: true });
 
@@ -37,7 +37,27 @@ app.get("/products", (req, res) => {
   });
 });
 
-// how get dynamic data asked by user
+// how get/load orders history data from server
+app.get("/orders", (req, res) => {
+  client = new MongoClient(uri, { useNewUrlParser: true });
+
+  client.connect((err) => {
+    const collection = client.db("onlineStore").collection("orders");
+    // perform actions on the collection object
+    collection.find().toArray((err, documents) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send({ message: err });
+      } else {
+        res.send(documents);
+      }
+    });
+
+    client.close();
+  });
+});
+
+// how get dynamic data of products key asked by user from server
 app.get("/product/:key", (req, res) => {
   const key = req.params.key; // read user request
 
@@ -59,6 +79,7 @@ app.get("/product/:key", (req, res) => {
   });
 });
 
+// how to post data to mongodb server
 app.post("/getProductsByKey", (req, res) => {
   const key = req.params.key; // read user request
   const productKeys = req.body;
@@ -81,7 +102,7 @@ app.post("/getProductsByKey", (req, res) => {
   });
 });
 
-// how to post data
+// how to post all product data to server
 app.post("/addProduct", (req, res) => {
   // save to database
   const product = req.body;
@@ -103,6 +124,7 @@ app.post("/addProduct", (req, res) => {
   });
 });
 
+// how to post all order data to server
 app.post("/placeOrder", (req, res) => {
   // save to database
   const orderDetails = req.body;
